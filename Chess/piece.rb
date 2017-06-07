@@ -52,6 +52,11 @@ class Piece
     end
   end
 
+  def dup(board)
+    @board = board
+    @position = @position.dup
+  end
+
   private
 
   def move_into_check(to_pos)
@@ -64,11 +69,16 @@ module SteppingPiece
     theoretical_moves = move_diffs.map do |diff|
       [@position, diff].transpose.map { |x| x.reduce(:+) }
     end
+    theoretical_moves.select do |move|
+      @board.in_bounds?(move)
+    end.select do |move|
+      @board[move].empty? || @board[move].color != @color
+    end
   end
 
-  private
-
-  def move_diffs; end
+  # private
+  #
+  # def move_diffs; end
 end
 
 class King < Piece
@@ -123,9 +133,9 @@ module SlidingPiece
 
 
   # private
-
-  def move_dirs()
-  end
+  #
+  # def move_dirs()
+  # end
 
   def cardinal_dirs
     cardinals = [[0, 1], [0, -1], [1, 0], [-1, 0]]
@@ -192,17 +202,57 @@ class Rook < Piece
 end
 
   class Pawn < Piece
-  include SlidingPiece
 
   def symbol
     :''
   end
+
+  def moves
+    forward_steps + side_attacks
+  end
+
+  protected
+
+  def at_start_row?
+    @position[0] == (@color == :red ? 1 : 6)
+  end
+
+  def forward_dir
+    @color == :red ? [1, 0] : [-1, 0]
+  end
+
+  def forward_steps
+    deltas = [forward_dir]
+    deltas << forward_dir.map { |i| i * 2 } if at_start_row?
+    deltas.map do |delta|
+      [@position, delta].transpose.map { |x| x.reduce(:+) }
+    end
+  end
+
+  def side_attacks
+    red_deltas = [[1, -1], [1, 1]]
+    black_deltas = [[-1, -1], [-1, 1]]
+    deltas = @color == :red ? red_deltas : black_deltas
+    possible_attacks = deltas.map do |delta|
+      [@position, delta].transpose.map { |x| x.reduce(:+) }
+    end
+    possible_attacks.select do |attack|
+      @board.in_bounds?(attack)
+    end.select do |attack|
+      @board[attack].color == (@color == :red ? :black : :red)
+    end
+  end
+
 end
 
 class NullPiece < Piece
   include Singleton
 
-  def initialize; end
+  attr_reader :color
+
+  def initialize
+    @color = :blank
+  end
 
   def to_s
     ' ' + symbol.to_s + ' '
