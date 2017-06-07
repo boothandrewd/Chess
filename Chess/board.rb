@@ -2,7 +2,8 @@
 require_relative 'piece'
 
 class Board
-  attr_reader :grid
+  attr_accessor :grid
+
   def initialize
     grid = [
       [:rook, :knight, :bishop, :king, :queen, :bishop, :knight, :rook],
@@ -38,18 +39,50 @@ class Board
     raise StandardError unless @grid[end_row][end_col].nil?
   end
 
+  def move_piece!((start_row, start_col), (end_row, end_col))
+  end
+
   def in_bounds?((row, col))
     row.between?(0, 7) && col.between?(0, 7)
+  end
+
+  def in_check?(color)
+    king = @grid.flatten.select do |piece|
+      piece.is_a?(King) && piece.color == color
+    end.first
+
+    @grid.flatten.reject do |piece|
+      piece.color == color
+    end.reject do |piece|
+      piece == NullPiece.instance
+    end.any? do |piece|
+      piece.moves.any? { |move| move == king.position }
+    end
+
+  end
+
+  def checkmate?(color)
+  end
+
+  def dup
+    new_board = self.class.new
+
+    new_grid = @grid.map do |row|
+      row.map do |piece|
+        if piece == NullPiece.instance
+          NullPiece.instance
+        else
+          piece.dup(new_board)
+        end
+      end
+    end
+
+    new_board.grid = new_grid
+    new_board
   end
 end
 
 if __FILE__ == $PROGRAM_NAME
-  # b = Board.new
-  # # r = b[[0, 0]]
-  # # p b[[1, 0]].empty?
-  # # p r.grow_unblocked_moves_in_dir([1, 0])
-  # q = Queen.new(b, [4, 4], :red)
-  # b[[4, 4]] = q
-  #
-  # p q.moves
+  b = Board.new
+  # d = Display.new
 end

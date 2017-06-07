@@ -32,11 +32,12 @@ MOVES = {
 
 class Cursor
 
-  attr_reader :cursor_pos, :board
+  attr_reader :cursor_pos, :board, :selected_pos
 
   def initialize(cursor_pos, board)
     @cursor_pos = cursor_pos
     @board = board
+    @selected_pos = nil
   end
 
   def get_input
@@ -77,8 +78,10 @@ class Cursor
 
   def handle_key(key)
     case key
-    when :return || :space
-      @cursor_pos
+    when :return
+      toggle_selected
+    when :space
+      toggle_selected
     when :ctrl_c
       Process.exit(0)
     else
@@ -89,5 +92,13 @@ class Cursor
   def update_pos(diff)
     cursor_pos = [@cursor_pos, diff].transpose.map { |x| x.reduce(:+) }
     @cursor_pos = cursor_pos if @board.in_bounds?(cursor_pos)
+  end
+
+  def toggle_selected
+    if @selected_pos.nil?
+      @selected_pos = @cursor_pos
+    else
+      @selected_pos = nil
+    end
   end
 end
